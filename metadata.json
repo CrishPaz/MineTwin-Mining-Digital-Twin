@@ -1,0 +1,6 @@
+{
+  "name": "MineTwin Mining Digital Twin",
+  "description": "Digital Twin 3D and Predictive Maintenance platform for open-pit mining loading equipment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
