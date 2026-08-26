@@ -314,6 +314,8 @@ export default function App() {
                 <div className="lg:col-span-2 h-[520px]">
                   <Equipment3DViewer
                     components={currentEquipment.components}
+                    equipmentType={currentEquipment.equipmentType}
+                    modelName={currentEquipment.modelName}
                     selectedNodeId={selectedNodeId}
                     onSelectComponent={(nodeId) => setSelectedNodeId(nodeId)}
                     isSimulatingWhatIf={isSimulatingWhatIf}
