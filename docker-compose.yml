@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos Relacional y Series Temporales
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: minetwin_timescaledb
+    environment:
+      POSTGRES_DB: minetwin_cbm_db
+      POSTGRES_USER: minetwin_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-MiningCBM2026Secure!}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/init_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minetwin_admin -d minetwin_cbm_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Caché y Pub/Sub de Telemetría
+  redis:
+    image: redis:7.2-alpine
+    container_name: minetwin_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # 3. Broker MQTT para Sensores Edge en Mina
+  mqtt_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: minetwin_mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: unless-stopped
+
+  # 4. Backend Core API (FastAPI + Inferencia ML)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: minetwin_backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://minetwin_admin:${DB_PASSWORD:-MiningCBM2026Secure!}@db:5432/minetwin_cbm_db
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-MINE_TWIN_ENTERPRISE_SECRET_KEY_PROD_MINING_99}
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # 5. Frontend Web (React 18 + Three.js + WebGL)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: minetwin_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
